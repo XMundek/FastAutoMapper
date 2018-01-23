@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,7 +12,11 @@ namespace Moon.FastAutoMapper
     {
         public static TDestination Map<TSource, TDestination>(this TSource obj)
         {
-            return new Mapper().Map<TSource, TDestination>(obj);
+            return Mapper.MapInternal<TSource, TDestination>(obj);
+        }
+        public static TDestination Map<TDestination>(this object obj)
+        {
+            return Mapper.MapObject<TDestination>(obj);
         }
     }
 

@@ -31,6 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -43,6 +44,7 @@
   <ItemGroup>
     <Compile Include="IMapper.cs" />
     <Compile Include="MapperExtensions.cs" />
+    <Compile Include="MappingPrimitivesConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Mapper.cs" />
   </ItemGroup>
