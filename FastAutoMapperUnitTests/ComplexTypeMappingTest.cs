@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Moon.FastAutoMapper.UnitTest
 {
@@ -137,6 +138,8 @@ namespace Moon.FastAutoMapper.UnitTest
         [TestMethod]
         public void TestSourceClassToDestinationClassWithAutoPropertyMapping()
         {
+            var cultureInfo = Thread.CurrentThread.CurrentCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             TestMapping<SourceClassWithAutoProperty, DestinationClassWithAutoProperty>(
                     new SourceClassWithAutoProperty()
                     {
@@ -145,6 +148,7 @@ namespace Moon.FastAutoMapper.UnitTest
                         z = "331.22"
                     }
                 );
+            Thread.CurrentThread.CurrentCulture = cultureInfo;
         }
 
         [TestMethod]
