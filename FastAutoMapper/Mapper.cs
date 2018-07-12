@@ -8,7 +8,7 @@ using System.Reflection.Emit;
 
 namespace Moon.FastAutoMapper
 {
-    public class Mapper : IMapper
+    public class Mapper :IMapper
     {
         private class ListInfo
         {
@@ -68,14 +68,23 @@ namespace Moon.FastAutoMapper
                 }
             }
         }
-        public TDestination Map<TSource, TDestination>(TSource source)
+
+        public static TDestination Map<TDestination>(object source)
         {
-            return MapInternal<TSource, TDestination>(source);
+            if (source == null)
+                return default(TDestination);
+            return (TDestination)typeMapping.GetMapping(source.GetType(), typeof(TDestination)).DynamicInvoke(source);
         }
 
-        public TDestination Map<TDestination>(object source)
+        public static TDestination Map<TSource, TDestination>(TSource source)
         {
-            return MapObject<TDestination>(source);
+            if (source == null) return default(TDestination);
+            var sourceType = typeof(TSource);
+            var destinationType = typeof(TDestination);
+
+            if (sourceType == destinationType)
+                return (TDestination)(object)source;
+            return MapClass<TSource, TDestination>(source);
         }
 
         public static void AddMapping<TSource, TDestination>(Func<TSource, TDestination> f)
@@ -87,6 +96,7 @@ namespace Moon.FastAutoMapper
             var method = f.Method;
             listMethod.SetMapping(key, method.IsStatic ? method : mapCallLambdaMethodInfo.MakeGenericMethod(sourceType,destinationType));
         }
+
         public static void DeleteMapping<TSource, TDestination>()
         {
             var key = GetMappingKey(typeof(TSource), typeof(TDestination));
@@ -94,33 +104,29 @@ namespace Moon.FastAutoMapper
             typeMapping.DeleteMapping(key);
             listMethod.DeleteMapping(key);
         }
+
         public static CultureInfo MappingCulture
         {
             get { return MappingPrimitivesConverter.MappingCulture; }
             set { MappingPrimitivesConverter.MappingCulture = value; }
         }
 
-
-        private static readonly MappingDictionary<Delegate> typeMapping =
-            new MappingDictionary<Delegate>(CreateObjectMapping);
-
-        private static readonly Dictionary<long, Dictionary<int, int>> enumMapping =
-            new Dictionary<long, Dictionary<int, int>>();
-
-        private static readonly MappingDictionary<ListInfo> listMapping =
-            new MappingDictionary<ListInfo>(CreateListMapping);
-
-        private static readonly MappingDictionary<MethodInfo> listMethod =
-            new MappingDictionary<MethodInfo>(CreateMethodMapping);
+        private static readonly MappingDictionary<Delegate> typeMapping = new MappingDictionary<Delegate>(CreateObjectMapping);    
+        private static readonly Dictionary<long, Dictionary<int, int>> enumMapping = new Dictionary<long, Dictionary<int, int>>();
+        private static readonly MappingDictionary<ListInfo> listMapping =new MappingDictionary<ListInfo>(CreateListMapping);
+        private static readonly MappingDictionary<MethodInfo> listMethod = new MappingDictionary<MethodInfo>(CreateMethodMapping);
 
         private static readonly Type objectTypeInfo = typeof(object);
         private static readonly Type funcType = typeof(Func<,>);
         private static readonly Type stringType = typeof(string);
         private static readonly Type intType = typeof(int);
+        private static readonly Type nullableType = typeof(Nullable<>);
 
         private static readonly MethodInfo mapObjectMethodInfo = GetMappingMethod("MapClass");
         private static readonly MethodInfo mapEnumMethodInfo = GetMappingMethod("MapEnum");
+        private static readonly MethodInfo mapNullableEnumMethodInfo = GetMappingMethod("MapNullableEnum");
         private static readonly MethodInfo mapComplexEnumMethodInfo = GetMappingMethod("MapComplexEnum");
+        private static readonly MethodInfo mapNullableComplexEnumMethodInfo = GetMappingMethod("MapNullableComplexEnum");
         private static readonly MethodInfo mapArrayMethodInfo = GetMappingMethod("MapArray");
         private static readonly MethodInfo mapListToArrayMethodInfo = GetMappingMethod("MapListToArray");
         private static readonly MethodInfo mapArrayToListMethodInfo = GetMappingMethod("MapArrayToList");
@@ -159,7 +165,6 @@ namespace Moon.FastAutoMapper
                 listMethod[mappingKey] = method;
                 typeMapping[mappingKey] = method.CreateDelegate(funcType.MakeGenericType(sourceType, destType));
             }
-
         }
 
         private static long GetMappingKey(Type sourceType, Type destinationType)
@@ -190,17 +195,6 @@ namespace Moon.FastAutoMapper
             return enumMappings;
         }
 
-        internal static TDestination MapInternal<TSource, TDestination>(TSource source)
-        {
-            if (source == null) return default(TDestination);
-            var sourceType = typeof(TSource);
-            var destinationType = typeof(TDestination);
-
-            if (sourceType == destinationType)
-                return (TDestination)(object)source;
-            return MapClass<TSource, TDestination>(source);
-        }
-
         private static Type GetElementType(Type sourceType)
         {
             return sourceType.IsArray
@@ -208,11 +202,9 @@ namespace Moon.FastAutoMapper
                 : sourceType.IsGenericType//is iList
                     ? sourceType.GenericTypeArguments[0]
                     : sourceType;
-
         }
         private static ListInfo CreateListMapping(Type sourceType, Type destinationType)
         {
-
             MethodInfo mappingMethod;
             var sourceElementType = GetElementType(sourceType);
             var destElementType = GetElementType(destinationType);
@@ -227,7 +219,6 @@ namespace Moon.FastAutoMapper
                     : destinationType.GetInterfaces().Contains(typeof(IList))
                         ? mapArrayToListMethodInfo : mapArrayToItemMethodInfo;
             }
-
 
             return new ListInfo()
             {
@@ -245,6 +236,7 @@ namespace Moon.FastAutoMapper
             }
             return mapObjectMethodInfo.MakeGenericMethod(sourceType, destinationType);
         }
+
         private static Dictionary<long, FieldInfo> GetFields(Type type)
         {
 
@@ -274,9 +266,9 @@ namespace Moon.FastAutoMapper
                 fieldName = fieldName.Substring(1, fieldName.IndexOf(">", 2) - 1);
             return fieldName.ToUpper().GetHashCode();
         }
+
         private static bool LoadFields(Type sourceType, Type destinationType, List<FieldMappingInfo> fieldMappings)
         {
-
             var sourceFields = GetFields(sourceType);
             if (sourceFields.Count == 0) return false;
             bool isComplexMapping = false;
@@ -306,21 +298,16 @@ namespace Moon.FastAutoMapper
                             {
                                 if (sourceFieldType.IsEnum)
                                 {
-                                    if (destinationFieldType != stringType && destinationFieldType != objectTypeInfo)
+                                    if (!(destinationFieldType == stringType || destinationFieldType == objectTypeInfo || IsNullable(destinationFieldType)))
                                         sourceFieldType = GetEnumType(sourceFieldType);
                                 }
-                                else
-                                {
-                                    if (sourceFieldType != stringType)
+                                else if (!(sourceFieldType == stringType || IsNullable(sourceFieldType)))
                                         destinationFieldType = GetEnumType(destinationFieldType);
-                                }
                             }
                         }
 
                         if (sourceFieldType == destinationFieldType)
-                        {
                             fieldMapping.IsSimpleMapping = true;
-                        }
                         else
                         {
                             fieldMapping.SourceFieldType = sourceFieldType;
@@ -362,10 +349,12 @@ namespace Moon.FastAutoMapper
         {
             return enumType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)[0].FieldType;
         }
+
         private static bool IsSimpleEnum(Type enumType)
         {
             return GetEnumType(enumType) == intType;
         }
+
         private static void EmitEnumMapping(ILGenerator iL, Type sourceType, Type destType)
         {
             if (IsSimpleEnum(sourceType) && IsSimpleEnum(destType))
@@ -374,9 +363,7 @@ namespace Moon.FastAutoMapper
                 iL.Emit(OpCodes.Call, mapEnumMethodInfo);
             }
             else
-            {
                 iL.Emit(OpCodes.Call, mapComplexEnumMethodInfo.MakeGenericMethod(sourceType, destType));
-            }
         }
 
         private static void EmitStringToEnumMapping(ILGenerator iL, Type destinationType)
@@ -426,6 +413,7 @@ namespace Moon.FastAutoMapper
             iL.Emit(OpCodes.Ldfld, fieldMapping.SourceField);
             iL.Emit(OpCodes.Stfld, fieldMapping.DestinationField);
         }
+
         private static void EmitStringToEnumFieldMapping(ILGenerator iL, FieldMappingInfo fieldMapping, bool isClass)
         {
             //load destination from variable at 0 position
@@ -439,6 +427,7 @@ namespace Moon.FastAutoMapper
             //set mapped value to destination field
             iL.Emit(OpCodes.Stfld, fieldMapping.DestinationField);
         }
+
         private static void EmitStringFieldMapping(ILGenerator iL, FieldMappingInfo fieldMapping, bool isClass)
         {
             //load destination from variable at 0 position
@@ -453,6 +442,7 @@ namespace Moon.FastAutoMapper
             //set mapped value to destination field
             iL.Emit(OpCodes.Stfld, fieldMapping.DestinationField);
         }
+
         private static void EmitEnumFieldMapping(ILGenerator iL, FieldMappingInfo fieldMapping, bool isClass)
         {
             EmitLoadDestinationObject(iL, isClass);
@@ -524,14 +514,15 @@ namespace Moon.FastAutoMapper
             else
                 iL.Emit(OpCodes.Ldloca_S, 0);
         }
+
         private static void EmitComplexSetField(ILGenerator iL, FieldMappingInfo fieldMapping)
         {
             //call Map{Object|Array|List}(object source)
             iL.Emit(OpCodes.Call, listMethod.GetMapping(fieldMapping.SourceFieldType, fieldMapping.DestinationFieldType));
             //set mapped value to destination field
             iL.Emit(OpCodes.Stfld, fieldMapping.DestinationField);
-
         }
+
         private static void EmitComplexClassMapping(ILGenerator iL, List<FieldMappingInfo> fieldMappings, bool isClass)
         {
             //store destination object in variable at 0 position
@@ -587,6 +578,7 @@ namespace Moon.FastAutoMapper
                 iL.Emit(OpCodes.Call, listMethod.GetMapping(sourceType, destinationType));
             }
         }
+
         private static Delegate CreateObjectMapping(Type sourceType, Type destinationType)
         {
             var copyFuncGenerator = new DynamicMethod(
@@ -640,10 +632,16 @@ namespace Moon.FastAutoMapper
             return copyFuncGenerator.CreateDelegate(
                 funcType.MakeGenericType(sourceType, destinationType));
         }
+
+        private static bool IsNullable(Type sourceType)
+        {
+            return sourceType.IsGenericType && sourceType.GetGenericTypeDefinition() == nullableType;
+        }
+
         private static bool EmitNullableMapping(ILGenerator iL, Type sourceType, Type destinationType)
         {
-            bool isSourceNullable = sourceType.IsValueType && sourceType.Name.Contains("Nullable");
-            bool isDestinationNullable = sourceType.IsValueType && destinationType.Name.Contains("Nullable");
+            bool isSourceNullable = IsNullable(sourceType);
+            bool isDestinationNullable = IsNullable(destinationType);
 
             if (isSourceNullable && !isDestinationNullable)
             {
@@ -658,45 +656,74 @@ namespace Moon.FastAutoMapper
             return false;
         }
 
-        private static void EmitPrimitiveToNullableMapping(ILGenerator iL, FieldInfo hasValue)
+        private static void EmitStructInit(ILGenerator iL, Type type)
         {
+            iL.DeclareLocal(type);
+            iL.Emit(OpCodes.Ldloca_S, 0);
+            iL.Emit(OpCodes.Initobj, type);
+        }
+
+        private static void EmitNullableTypeInstance(ILGenerator iL, Type type )
+        {
+            EmitStructInit(iL,type);
             iL.Emit(OpCodes.Ldloca_S, 0);
             iL.Emit(OpCodes.Ldc_I4_1);
-            iL.Emit(OpCodes.Stfld, hasValue);
+            iL.Emit(OpCodes.Stfld, GetFieldByExactName(type, "hasValue"));
             iL.Emit(OpCodes.Ldloca_S, 0);
             iL.Emit(OpCodes.Ldarg_0);
-
         }
+        private static void EmitNullableTypeInstance(ILGenerator iL, Type type, FieldInfo value)
+        {
+            EmitNullableTypeInstance(iL, type);
+            iL.Emit(OpCodes.Stfld, value);
+            iL.Emit(OpCodes.Ldloc_0);
+        }
+
         private static void EmitPrimitiveToNullableMapping(ILGenerator iL, Type sourceType, Type destinationType)
         {
-            var hasValue = GetFieldByExactName(destinationType, "hasValue");
             var value = GetFieldByExactName(destinationType, "value");
-            iL.DeclareLocal(destinationType);
-            iL.Emit(OpCodes.Ldloca_S, 0);
-            iL.Emit(OpCodes.Initobj, destinationType);
-            destinationType = value.FieldType;
-            if (destinationType == sourceType)
+            var destinationValueType = value.FieldType;
+            
+            if (destinationValueType == sourceType)
+                EmitNullableTypeInstance(iL,destinationType,value);
+            else 
             {
-                EmitPrimitiveToNullableMapping(iL, hasValue);
-                iL.Emit(OpCodes.Stfld, value);
-            }
-            else
-            {
-                var mappingKey = GetMappingKey(sourceType, destinationType);
-                if (primitiveTypeMappings.ContainsKey(mappingKey))
+                if (destinationValueType.IsEnum)
                 {
-                    EmitPrimitiveToNullableMapping(iL, hasValue);
-                    iL.Emit(OpCodes.Call, primitiveTypeMappings[mappingKey]);
-                    iL.Emit(OpCodes.Stfld, value);
+                    if (sourceType.IsEnum)
+                    {
+                        iL.Emit(OpCodes.Ldarg_0);
+                        if (IsSimpleEnum(sourceType) && IsSimpleEnum(destinationValueType))
+                        {
+                            iL.Emit(OpCodes.Ldc_I8, GetEnumMapping(sourceType, destinationValueType));
+                            iL.Emit(OpCodes.Call, mapNullableEnumMethodInfo);
+                        }
+                        else
+                            iL.Emit(OpCodes.Call, mapNullableComplexEnumMethodInfo.MakeGenericMethod(sourceType, destinationValueType));
+                        return;
+                    }
+                    destinationValueType = GetEnumType(destinationValueType);
                 }
-                else if (destinationType.IsEnum && sourceType.IsEnum)
+                else if (sourceType.IsEnum)
+                    sourceType = GetEnumType(sourceType);
+
+                if (destinationValueType == sourceType)
+                    EmitNullableTypeInstance(iL, destinationType, value);
+                else
                 {
-                    EmitPrimitiveToNullableMapping(iL, hasValue);
-                    EmitEnumMapping(iL, sourceType, destinationType);
-                    iL.Emit(OpCodes.Stfld, value);
+                    var mappingKey = GetMappingKey(sourceType, destinationValueType);
+                    if (primitiveTypeMappings.ContainsKey(mappingKey))
+                    {
+                        EmitNullableTypeInstance(iL, destinationType);
+                        iL.Emit(OpCodes.Call, primitiveTypeMappings[mappingKey]);
+                        iL.Emit(OpCodes.Stfld, value);
+                        iL.Emit(OpCodes.Ldloc_0);
+                        return;
+                    }
+                    EmitStructInit(iL, destinationType);
+                    iL.Emit(OpCodes.Ldloc_0);
                 }
             }
-            iL.Emit(OpCodes.Ldloc_0);
         }
 
         private static void EmitNullableToPrimitiveMapping(ILGenerator iL, Type destinationType, FieldInfo hasValue, FieldInfo value)
@@ -713,6 +740,7 @@ namespace Moon.FastAutoMapper
             iL.Emit(OpCodes.Ldarg_0);
             iL.Emit(OpCodes.Ldfld, value);
         }
+
         private static void EmitNullableToPrimitiveMapping(ILGenerator iL, Type sourceType, Type destinationType)
         {
             var hasValue = GetFieldByExactName(sourceType, "hasValue");
@@ -743,11 +771,10 @@ namespace Moon.FastAutoMapper
                     iL.Emit(OpCodes.Ldloc_0);
                 }
                 else
-                {
                     iL.Emit(OpCodes.Ldnull);
-                }
             }
         }
+
         private static bool EmitInitObject(ILGenerator iL, Type destinationType, bool isClass)
         {
             if (isClass)
@@ -768,22 +795,37 @@ namespace Moon.FastAutoMapper
             }
             return true;
         }
+
         private static int MapEnum(int source, long mappingKey)
         {
             var mapping = enumMapping[mappingKey];
             return mapping.ContainsKey(source) ? mapping[source] : 0;
         }
+
+        private static int? MapNullableEnum(int source, long mappingKey)
+        {
+            var mapping = enumMapping[mappingKey];
+            return mapping.ContainsKey(source) ? mapping[source] : (int?)null;
+        }
+
         private static TDestination MapComplexEnum<TSource, TDestination>(TSource source)
             where TSource : struct
             where TDestination : struct
         {
             return Enum.TryParse<TDestination>(source.ToString(), true, out var result) ? result : default(TDestination);
         }
+
+        private static TDestination? MapNullableComplexEnum<TSource, TDestination>(TSource source)
+            where TSource : struct
+            where TDestination : struct
+        {
+            return Enum.TryParse<TDestination>(source.ToString(), true, out var result) ? result : (TDestination?)null;
+        }
+
         private static T MapStringToEnum<T>(string source) where T : struct
         {
             return Enum.TryParse<T>(source, true, out var result) ? result : default(T);
         }
-
 
         private static TDestination[] MapArray<TSource, TDestination>(TSource[] sourceList)
         {
@@ -805,13 +847,6 @@ namespace Moon.FastAutoMapper
         internal static TDestination MapClass<TSource, TDestination>(TSource source)
         {
             return GetMapping<TSource, TDestination>()(source);
-        }
-
-        internal static TDestination MapObject<TDestination>(object source)
-        {
-            if (source == null)
-                return default(TDestination);
-            return (TDestination)typeMapping.GetMapping(source.GetType(), typeof(TDestination)).DynamicInvoke(source);
         }
 
         private static TDestination[] MapListToArray<TSource, TDestination>(IList<TSource> sourceList)
@@ -838,7 +873,6 @@ namespace Moon.FastAutoMapper
                 GetMapping<TSource, TDestination>()(source)
             };
         }
-
 
         private static List<TDestination> MapArrayToList<TSource, TDestination>(TSource[] sourceList)
         {
@@ -867,6 +901,16 @@ namespace Moon.FastAutoMapper
         private static TDestination CallLambda<TSource, TDestination>(TSource source)
         {
             return ((Func<TSource, TDestination>)typeMapping[GetMappingKey(typeof(TSource), typeof(TDestination))])(source);            
+        }
+
+        TDestination IMapper.Map<TSource, TDestination>(TSource from)
+        {
+            return Map<TSource, TDestination>(from);
+        }
+
+        TDestination IMapper.Map<TDestination>(object from)
+        {
+            return Map<TDestination>(from);
         }
     }
 }

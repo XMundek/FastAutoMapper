@@ -8,13 +8,15 @@ namespace Moon.FastAutoMapper.UnitTest
         [TestMethod]
         public void TestStrongTypeMappingByInterface()
         {
-            var result = new Mapper().Map<int,string>(2);
+            IMapper mapper = new Mapper();
+            var result = mapper.Map<int,string>(2);
             Assert.AreEqual(result, "2");
         }
         [TestMethod]
         public void TestObjectMappingByInterface()
         {
-            var result = new Mapper().Map<string>(2);
+            IMapper mapper = new Mapper();
+            var result = mapper.Map<string>(2);
             Assert.AreEqual(result, "2");
         }
         [TestMethod]

@@ -99,7 +99,7 @@ namespace Moon.FastAutoMapper
 
         public static int ToInt32(object v)
         {
-            return Mapper.MapObject<int>(v);
+            return Mapper.Map<int>(v);
         }
 
         public static int ToInt32(string v)
@@ -194,7 +194,7 @@ namespace Moon.FastAutoMapper
 
         public static long ToInt64(object v)
         {
-            return Mapper.MapObject<long>(v);
+            return Mapper.Map<long>(v);
         }
 
         public static long ToInt64(string v)
@@ -286,7 +286,7 @@ namespace Moon.FastAutoMapper
 
         public static short ToInt16(object v)
         {
-            return Mapper.MapObject<short>(v);
+            return Mapper.Map<short>(v);
         }
 
         public static short ToInt16(string v)
@@ -378,7 +378,7 @@ namespace Moon.FastAutoMapper
 
         public static sbyte ToSByte(object v)
         {
-            return Mapper.MapObject<sbyte>(v);
+            return Mapper.Map<sbyte>(v);
         }
 
         public static sbyte ToSByte(string v)
@@ -469,7 +469,7 @@ namespace Moon.FastAutoMapper
 
         public static byte ToByte(object v)
         {
-            return Mapper.MapObject<byte>(v);
+            return Mapper.Map<byte>(v);
         }
 
         public static byte ToByte(string v)
@@ -561,7 +561,7 @@ namespace Moon.FastAutoMapper
 
         public static ushort ToUInt16(object v)
         {
-            return Mapper.MapObject<ushort>(v);
+            return Mapper.Map<ushort>(v);
         }
 
         public static ushort ToUInt16(string v)
@@ -656,7 +656,7 @@ namespace Moon.FastAutoMapper
 
         public static uint ToUInt32(object v)
         {
-            return Mapper.MapObject<uint>(v);
+            return Mapper.Map<uint>(v);
         }
 
         public static uint ToUInt32(string v)
@@ -749,7 +749,7 @@ namespace Moon.FastAutoMapper
 
         public static ulong ToUInt64(object v)
         {
-            return Mapper.MapObject<ulong>(v);
+            return Mapper.Map<ulong>(v);
         }
 
         public static ulong ToUInt64(string v)
@@ -838,7 +838,7 @@ namespace Moon.FastAutoMapper
 
         public static bool ToBoolean(object v)
         {
-            return (v!=null) && (!v.GetType().IsValueType || Mapper.MapObject<bool>(v));                        
+            return (v!=null) && (!v.GetType().IsValueType || Mapper.Map<bool>(v));                        
         }
 
         public static bool ToBoolean(string v)
@@ -928,7 +928,7 @@ namespace Moon.FastAutoMapper
 
         public static char ToChar(object v)
         {
-            return Mapper.MapObject<char>(v);
+            return Mapper.Map<char>(v);
         }
 
         public static char ToChar(string v)
@@ -1017,7 +1017,7 @@ namespace Moon.FastAutoMapper
 
         public static float ToSingle(object v)
         {
-            return Mapper.MapObject<float>(v);
+            return Mapper.Map<float>(v);
         }
 
         public static float ToSingle(string v)
@@ -1106,7 +1106,7 @@ namespace Moon.FastAutoMapper
 
         public static double ToDouble(object v)
         {
-            return Mapper.MapObject<double>(v);
+            return Mapper.Map<double>(v);
         }
 
         public static double ToDouble(string v)
@@ -1208,7 +1208,7 @@ namespace Moon.FastAutoMapper
 
         public static decimal ToDecimal(object v)
         {
-            return Mapper.MapObject<decimal>(v);
+            return Mapper.Map<decimal>(v);
         }
 
         public static decimal ToDecimal(string v)
@@ -1318,7 +1318,7 @@ namespace Moon.FastAutoMapper
         }
         public static DateTime ToDateTime(object v)
         {
-            return Mapper.MapObject<DateTime>(v);
+            return Mapper.Map<DateTime>(v);
         }
         public static DateTime ToDateTime(string v)
         {
@@ -1403,7 +1403,7 @@ namespace Moon.FastAutoMapper
         }
         public static TimeSpan ToTimeSpan(object v)
         {
-            return Mapper.MapObject<TimeSpan>(v);
+            return Mapper.Map<TimeSpan>(v);
         }
         public static TimeSpan ToTimeSpan(string v)
         {
@@ -1503,7 +1503,7 @@ namespace Moon.FastAutoMapper
         }
         public static Guid ToGuid(object v)
         {
-            return Mapper.MapObject<Guid>(v);
+            return Mapper.Map<Guid>(v);
         }
         public static Guid ToGuid(string v)
         {

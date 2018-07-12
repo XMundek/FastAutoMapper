@@ -12,11 +12,11 @@ namespace Moon.FastAutoMapper
     {
         public static TDestination Map<TSource, TDestination>(this TSource obj)
         {
-            return Mapper.MapInternal<TSource, TDestination>(obj);
+            return Mapper.Map<TSource, TDestination>(obj);
         }
         public static TDestination Map<TDestination>(this object obj)
         {
-            return Mapper.MapObject<TDestination>(obj);
+            return Mapper.Map<TDestination>(obj);
         }
     }
 

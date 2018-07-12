@@ -23,10 +23,9 @@ namespace Moon.FastAutoMapper.UnitTest
         {
             try
             {
-                var mapper = new Mapper();
                  var result = objectMode 
-                    ? mapper.Map<TDestination>(source) 
-                    : mapper.Map<TSource, TDestination>(source);
+                    ? Mapper.Map<TDestination>(source) 
+                    : Mapper.Map<TSource, TDestination>(source);
                 var differences = expectedResult.GetObjectDifferences(result);
                 var testResult = "Test " + caller + " " + (differences.Count > 0 ? "failed" : "success") + ":"
                                  + GetObjectInfo(typeof(TSource), source) + "=" +

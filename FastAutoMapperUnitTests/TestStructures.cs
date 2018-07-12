@@ -105,6 +105,12 @@ namespace Moon.FastAutoMapper.UnitTest
     {
         public SimpleEnumSource type;
     }
+
+    public class ClassWithNullableEnumField
+    {
+        public SimpleEnumDestination? type;
+    }
+
     public class ClassWithStringField
     {
         public string type;
@@ -230,5 +236,17 @@ namespace Moon.FastAutoMapper.UnitTest
         public string FirstName { get; set; }
         public DestinationAddress Address { get; set; }
     }
+
+    public class RecurrencyTestSourceClass
+    {
+        public int Id { get; set; }
+        public RecurrencyTestSourceClass Parent { get; set; }
+    }
+    public class RecurrencyTestDestinationClass
+    {
+        public int Id { get; set; }
+        public RecurrencyTestDestinationClass Parent { get; set; }
+    }
+
 }
 

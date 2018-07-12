@@ -87,9 +87,16 @@ namespace Moon.FastAutoMapper.UnitTest
         public void TestEnumToNullableEnumMapping()
         {
             TestMapping<SimpleEnumSource, SimpleEnumDestination?>(SimpleEnumSource.c, SimpleEnumDestination.c);
-            TestMapping<SimpleEnumSource, SimpleEnumSource?>(SimpleEnumSource.c, SimpleEnumDestination.c);
-
+            TestMapping<SimpleEnumSource, SimpleEnumSource?>(SimpleEnumSource.x, null);
         }
+
+        [TestMethod]
+        public void TestEnumLongToNullableEnumMapping()
+        {
+            TestMapping<SimpleEnumLongSource, SimpleEnumSource?>(SimpleEnumLongSource.a, SimpleEnumSource.a);
+            TestMapping<SimpleEnumLongSource, SimpleEnumSource?>(SimpleEnumLongSource.g, (SimpleEnumSource?) null);
+        }
+
         [TestMethod]
         public void TestNullableEnumToEnumMapping()
         {
@@ -124,6 +131,44 @@ namespace Moon.FastAutoMapper.UnitTest
             TestMapping<SimpleEnumSource?[][], SimpleEnumDestination?[][]>(source);
         }
 
+        [TestMethod]
+        public void TestNullableEnumArrayToEnumArrayMapping()
+        {
+            var source = new SimpleEnumSource?[] {SimpleEnumSource.a, SimpleEnumSource.c, SimpleEnumSource.d,null};
+            var expectedResult = new [] { SimpleEnumDestination.a, SimpleEnumDestination.c, SimpleEnumDestination.d, SimpleEnumDestination.b };
+            TestMapping<SimpleEnumSource?[], SimpleEnumDestination[]>(source,expectedResult);            
+        }
 
+        [TestMethod]
+        public void TestEnumArrayToNullableEnumArrayMapping()
+        {
+            var source = new [] { SimpleEnumSource.a, SimpleEnumSource.c, SimpleEnumSource.d, SimpleEnumSource.x };
+            var expectedResult = new SimpleEnumDestination?[] { SimpleEnumDestination.a, SimpleEnumDestination.c, SimpleEnumDestination.d, null };
+            TestMapping<SimpleEnumSource[], SimpleEnumDestination?[]>(source,expectedResult);
+        }
+
+        [TestMethod]
+        public void TestIntArrayToNullableEnumArrayMapping()
+        {
+            var source = new[] {1,3,10};
+            var expectedResult = new SimpleEnumDestination?[] { SimpleEnumDestination.c, SimpleEnumDestination.a, (SimpleEnumDestination)10};
+            TestMapping<int[], SimpleEnumDestination?[]>(source, expectedResult);
+        }
+
+        [TestMethod]
+        public void TestEnumArrayToNullableIntArrayMapping()
+        {
+            var source = new[] { SimpleEnumSource.a, SimpleEnumSource.b };
+            var expectedResult = new [] {(int) SimpleEnumSource.a, (int)SimpleEnumSource.b };
+            TestMapping<SimpleEnumSource[], int?[]>(source, expectedResult);
+        }
+
+        [TestMethod]
+        public void TestStructArrayToNullableIntArrayMapping()
+        {
+            var source = new[] { new SimpleSourceStruct(), new SimpleSourceStruct() };
+            var expectedResult = new int?[] {null, null};
+            TestMapping<SimpleSourceStruct[], int?[]>(source, expectedResult);
+        }
     }
 }

@@ -166,6 +166,38 @@ namespace Moon.FastAutoMapper.UnitTest
         }
 
         [TestMethod]
+        public void TestClassWithEnumFieldToClassWithIntFieldMapping()
+        {
+            TestMapping<ClassWithEnumField, ClassWithIntField>(
+                new ClassWithEnumField { type = SimpleEnumSource.a },
+                new ClassWithIntField(){type=1});
+        }
+
+        [TestMethod]
+        public void TestClassWithEnumFieldToClassWithNullableEnumFieldMapping()
+        {
+            TestMapping<ClassWithEnumField, ClassWithNullableEnumField>(
+                new ClassWithEnumField { type = SimpleEnumSource.a },
+                new ClassWithNullableEnumField { type = SimpleEnumDestination.a });
+
+            TestMapping<ClassWithEnumField, ClassWithNullableEnumField>(
+                new ClassWithEnumField { type = SimpleEnumSource.x },
+                new ClassWithNullableEnumField { type = null });
+        }
+
+        [TestMethod]
+        public void TestClassWithNullableEnumFieldToClassWithEnumFieldMapping()
+        {
+            TestMapping<ClassWithNullableEnumField, ClassWithEnumField>(
+                new ClassWithNullableEnumField { type = SimpleEnumDestination.a },
+                new ClassWithEnumField() { type = SimpleEnumSource.a });
+
+            TestMapping<ClassWithNullableEnumField, ClassWithEnumField>(
+                new ClassWithNullableEnumField { type = null },
+                new ClassWithEnumField() { type =SimpleEnumSource.x });
+        }
+
+        [TestMethod]
         public void TestClassWithStructFieldToClassWithObjectFieldMapping()
         {
             TestMapping<ClassWithStructField, ClassWithObjectField>(
@@ -224,11 +256,23 @@ namespace Moon.FastAutoMapper.UnitTest
                 new SourceDerivedClass() { x = 20, y = 49 },true);
         }
 
-
         [TestMethod]
         public void TestEmptyClassToClassWithField()
         {
             TestMapping<EmptyClass, DestinationDerivedClass>(new EmptyClass(),new DestinationDerivedClass());
         }
+
+        [TestMethod]
+        public void TestRecurrentStructureInMapping()
+        {
+            TestMapping<RecurrencyTestSourceClass, RecurrencyTestDestinationClass>(
+                new RecurrencyTestSourceClass()
+                {
+                    Id = 1,
+                    Parent = new RecurrencyTestSourceClass() { Id=2}
+                });
+        }
+
+
     }
 }

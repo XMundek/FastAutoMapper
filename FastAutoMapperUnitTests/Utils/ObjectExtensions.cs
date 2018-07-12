@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Reflection;
 
 namespace Moon.FastAutoMapper.UnitTest.Utils
@@ -19,33 +18,21 @@ namespace Moon.FastAutoMapper.UnitTest.Utils
 
         private static bool IsSimpleType(Type t)
         {
-            return t.IsEnum || t.IsPrimitive || (t == typeof(string)
-                                                 || t == typeof(decimal) || t == typeof(DateTime) ||
-                                                 t == typeof(TimeSpan)
-                                                 || t == typeof(Guid));
+            return t.IsEnum || t.IsPrimitive 
+                || t == typeof(string) || t == typeof(decimal) 
+                || t == typeof(DateTime) || t == typeof(TimeSpan) || t == typeof(Guid);
         }
 
-        private static void GetListDifferences(IList listA, IList listB, string propName, List<string> differences,
-            int level)
+        private static void GetListDifferences(IList listA, IList listB, string propName, List<string> differences,int level)
         {
-
             if (listA.Count != listB.Count)
-            {
                 differences.Add(string.Format("{0}.Count:{1}<>{2}", propName, listA.Count, listB.Count));
-            }
-
             for (var i = 0; i < listA.Count; i++)
             {
                 if (i < listB.Count)
-                {
-                    GetObjectDifferences(listA[i], listB[i], string.Format("{0}.[{1}]", propName, i),
-                        differences, level + 1);
-                }
+                    GetObjectDifferences(listA[i], listB[i], string.Format("{0}.[{1}]", propName, i),differences, level + 1);
                 else
-                {
-                    differences.Add(string.Format("Item {0}.[{1}] not found in right hand side object",
-                        propName, i));
-                }
+                    differences.Add(string.Format("Item {0}.[{1}] not found in right hand side object",propName, i));
             }
         }
 
@@ -65,8 +52,7 @@ namespace Moon.FastAutoMapper.UnitTest.Utils
         private static void GetObjectDifferences(object a, object b, string propName, List<string> differences,
             int level)
         {
-            if (a == null && b == null)
-                return;
+            if (a == null && b == null) return;
 
             if (b == null)
                 differences.Add(propName + " is null");
@@ -122,7 +108,6 @@ namespace Moon.FastAutoMapper.UnitTest.Utils
 
         private static List<FieldInfo> GetFields(Type type)
         {
-
             var fieldList = new List<FieldInfo>();
             var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             while (type != typeof(object))
@@ -156,8 +141,5 @@ namespace Moon.FastAutoMapper.UnitTest.Utils
             } while (type != typeof(object));
             return null;
         }
-
-
     }
-
 }
