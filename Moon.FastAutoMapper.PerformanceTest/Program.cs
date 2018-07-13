@@ -38,17 +38,15 @@ namespace Moon.FastAutoMapper.PerformanceTest
             return personList;
         }
 
-        private static void RunTest<T>(string testName, Func<T> prepareTestData, Action<T> testFunction)
+        private static void RunTest<T>(string testName, T testData, Action<T> testFunction)
         {
             try
             {
-                Console.WriteLine("PrepareTestData...");
-                var testData = prepareTestData();
-                Console.WriteLine($"{testName} test started");
+                Console.WriteLine($"{testName} first test started");
                 Stopwatch testTimer = Stopwatch.StartNew();
                 testFunction(testData);
                 testTimer.Stop();
-                Console.WriteLine("Mapping time: {0} ms", testTimer.ElapsedMilliseconds);
+                Console.WriteLine("First test mapping time: {0} ms", testTimer.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
@@ -58,17 +56,32 @@ namespace Moon.FastAutoMapper.PerformanceTest
 
         static void Main()
         {
-            RunTest("Automapper 7.0.1", GetTestData,
+            Console.WriteLine("PrepareTestData...");
+            var testData = GetTestData();
+
+            RunTest("Automapper 7.0.1",testData,
                 data =>
                 {
                     AutoMapper.Mapper.Initialize(new MapperConfigurationExpression());
                     var result = AutoMapper.Mapper.Map<PersonIn[], PersonOut[]>(data);
                 });
 
-            RunTest("Moon.FastAutoMapper", GetTestData,
+            RunTest("Moon.FastAutoMapper", testData,
                 data =>
                 {
                     var result = FastAutoMapper.Mapper.Map<PersonIn[], PersonOut[]>(data);
+                });
+
+            RunTest("CustomWithFor", testData,
+                data =>
+                {
+                    var result = CustomMapper.Map(data);
+                });
+
+            RunTest("CustomWithLinq", testData,
+                data =>
+                {
+                    var result = CustomMapper.MapWithLinq(data);
                 });
             Console.ReadLine();
         }
