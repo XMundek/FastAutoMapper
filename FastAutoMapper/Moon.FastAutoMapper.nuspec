@@ -8,7 +8,7 @@
     <owners>Miroslaw Galat</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Tool for mapping beetween classes, structures, arrays and simple types. Unit tests, examples and latest version source code: https://github.com/XMundek/FastAutoMapper</description>
-    <releaseNotes>Mapping optimalization and custom mapping support added.</releaseNotes>
+    <releaseNotes>Enum and nullable types mapping optimized.</releaseNotes>
     <copyright>Copyright © MoonSoft Company Ltd. - Miroslaw Galat 2017-2018</copyright>
     <tags>Mapper AutoMapper FastAutoMapper</tags>
   </metadata>
