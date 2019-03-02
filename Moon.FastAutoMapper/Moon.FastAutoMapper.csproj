@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net45;netcoreapp2.0</TargetFrameworks>
+    <AssemblyTitle>Moon.FastAutoMapper</AssemblyTitle>
+    <Company>MoonSoft Company Ltd. - Miroslaw Galat</Company>
+    <Product>Moon.FastAutoMapper</Product>
+    <Description>Tool for mapping beetween classes, structures, arrays and simple types. Unit tests, examples and latest version source code: https://github.com/XMundek/FastAutoMapper</Description>
+    <Copyright>Copyright © MoonSoft Company Ltd. - Miroslaw Galat 2017-2019</Copyright>
+    <Version>1.1.3.0</Version>
+    <AssemblyVersion>1.1.3.0</AssemblyVersion>
+    <FileVersion>1.1.3.0</FileVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Authors>Miroslaw Galat</Authors>
+    <PackageId>Moon.FastAutoMapper</PackageId>
+    <PackageReleaseNotes>Support for .NET Core 2.0 added</PackageReleaseNotes>
+    <PackageTags>Mapper AutoMapper FastAutoMapper</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+</Project>
