@@ -29,7 +29,7 @@ namespace Moon.FastAutoMapper
         //dictionary used to store mapping information between source and destination type 
         private class MappingDictionary<T> : Dictionary<long, T>
         {
-            public MappingDictionary(Func<Type, Type, T> createMapping)
+            public MappingDictionary(Func<Type, Type, T> createMapping):base(256)
             {
                 CreateMapping = createMapping;
             }
@@ -38,10 +38,10 @@ namespace Moon.FastAutoMapper
 
             public T GetMapping(Type sourceType, Type destType)
             {
-                var key = Mapper.GetMappingKey(sourceType, destType);
-                if (this.ContainsKey(key))
+                var key = Mapper.GetMappingKey(sourceType, destType);               
+                if (this.TryGetValue(key,out T value))
                 {
-                    return this[key];
+                    return value;
                 }
                 lock (this)
                 {
@@ -112,7 +112,7 @@ namespace Moon.FastAutoMapper
         }
 
         private static readonly MappingDictionary<Delegate> typeMapping = new MappingDictionary<Delegate>(CreateObjectMapping);    
-        private static readonly Dictionary<long, Dictionary<int, int>> enumMapping = new Dictionary<long, Dictionary<int, int>>();
+        private static readonly Dictionary<long, Dictionary<int, int>> enumMapping = new Dictionary<long, Dictionary<int, int>>(128);
         private static readonly MappingDictionary<ListInfo> listMapping =new MappingDictionary<ListInfo>(CreateListMapping);
         private static readonly MappingDictionary<MethodInfo> listMethod = new MappingDictionary<MethodInfo>(CreateMethodMapping);
 
