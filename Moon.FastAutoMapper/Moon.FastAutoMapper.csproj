@@ -12,10 +12,13 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Authors>Miroslaw Galat</Authors>
     <PackageId>Moon.FastAutoMapper</PackageId>
-    <PackageReleaseNotes>Support for .NET Core 2.0 added</PackageReleaseNotes>
+    <PackageReleaseNotes>Support for .NET Core 2.0 added.
+Support for mapping IList and IEnumerable added</PackageReleaseNotes>
     <PackageTags>Mapper AutoMapper FastAutoMapper</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Platforms>AnyCPU;x64</Platforms>
+    <RepositoryUrl>https://github.com/XMundek/FastAutoMapper/</RepositoryUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|x64'">
     <PlatformTarget>x64</PlatformTarget>
