@@ -69,6 +69,16 @@ namespace Moon.FastAutoMapper.UnitTest
         public long k;
 
     }
+    public class SourcePointGeneric<T>
+    {
+        public T x;
+        public T y;
+    }
+    public class DestinationPointGeneric<T>
+    {
+        public T x;
+        public T y;
+    }
     public struct SourceStructPoint
     {
 
@@ -153,17 +163,6 @@ namespace Moon.FastAutoMapper.UnitTest
         public int x { get; set; }
         public double y { get; set; }
     }
-    public class FirstCircularClass
-    {
-        public int i;
-        public FirstCircularClass parent;
-    }
-    public class SecondCircularClass
-    {
-        public int i;
-        public SecondCircularClass parent;
-    }
-
     public class SourceBaseClass
     {
         public int x;
@@ -247,6 +246,5 @@ namespace Moon.FastAutoMapper.UnitTest
         public int Id { get; set; }
         public RecurrencyTestDestinationClass Parent { get; set; }
     }
-
 }
 

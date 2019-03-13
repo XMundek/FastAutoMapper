@@ -27,7 +27,7 @@ namespace Moon.FastAutoMapper
         }
 
         //dictionary used to store mapping information between source and destination type 
-        private class MappingDictionary<T> : Dictionary<long, T>
+        private class MappingDictionary<T> : Dictionary<long, T> where T:class
         {
             public MappingDictionary(Func<Type, Type, T> createMapping):base(256)
             {
@@ -46,6 +46,7 @@ namespace Moon.FastAutoMapper
                 lock (this)
                 {
                     var mappingInfo = CreateMapping(sourceType, destType);
+                    if (mappingInfo == null) return null;
                     this[key] = mappingInfo;
                     return mappingInfo;
 
@@ -62,9 +63,10 @@ namespace Moon.FastAutoMapper
 
             public void DeleteMapping(long key)
             {
-                if (this.ContainsKey(key))
+                lock (this)
                 {
-                    this.Remove(key);
+                    if (this.ContainsKey(key))
+                        this.Remove(key);
                 }
             }
         }
@@ -132,6 +134,9 @@ namespace Moon.FastAutoMapper
         private static readonly MethodInfo mapArrayToListMethodInfo = GetMappingMethod(nameof(MapArrayToList));
         private static readonly MethodInfo mapItemToArrayMethodInfo = GetMappingMethod(nameof(MapItemToArray));
         private static readonly MethodInfo mapArrayToItemMethodInfo = GetMappingMethod(nameof(MapArrayToItem));
+        private static readonly MethodInfo mapIEnumerableToArrayMethodInfo = GetMappingMethod(nameof(MapIEnumerableToArray));
+        private static readonly MethodInfo mapIEnumerableToListMethodInfo = GetMappingMethod(nameof(MapIEnumerableToList));
+        private static readonly MethodInfo mapIEnumerableToItemMethodInfo = GetMappingMethod(nameof(MapIEnumerableToItem));
         private static readonly MethodInfo mapStringToEnumMethodInfo = GetMappingMethod(nameof(MapStringToEnum));
         private static readonly MethodInfo mapCallLambdaMethodInfo = GetMappingMethod(nameof(CallLambda));
         private static readonly Module dynamicModule = GetDynamicModule();
@@ -199,27 +204,66 @@ namespace Moon.FastAutoMapper
         {
             return sourceType.IsArray
                 ? sourceType.GetElementType()
-                : sourceType.IsGenericType//is iList
+                : sourceType.IsGenericType && IsIEnumerable(sourceType)
                     ? sourceType.GenericTypeArguments[0]
                     : sourceType;
         }
+
+        private static MethodInfo GetListMappingMethod(Type sourceType, Type destinationType)
+        {
+            Type[] interfaces;
+            if (destinationType.IsArray)
+            {
+                if (sourceType.IsArray)
+                    return mapArrayMethodInfo;
+                if (sourceType.IsGenericType) {            
+                    interfaces = sourceType.GetInterfaces();
+                    if (interfaces.Contains(typeof(IList)))
+                        return mapListToArrayMethodInfo;
+                    if (interfaces.Contains(typeof(IEnumerable)))
+                        return mapIEnumerableToArrayMethodInfo;
+                }
+                return mapItemToArrayMethodInfo;
+            }
+            if (sourceType.IsArray)
+            {
+                if (destinationType.IsGenericType && IsAssignableToList(destinationType))
+                       return mapArrayToListMethodInfo;
+                return mapArrayToItemMethodInfo;
+            }
+            if (sourceType.IsGenericType)
+            {
+                if (destinationType.IsGenericType)
+                {
+                    if (!destinationType.IsInterface 
+                            && destinationType.GetGenericTypeDefinition() == sourceType.GetGenericTypeDefinition())
+                        return null;
+                    if (!IsIEnumerable(sourceType))
+                        return null;
+                    if (IsAssignableToList(destinationType))
+                        return mapIEnumerableToListMethodInfo;
+                    return mapIEnumerableToItemMethodInfo;
+                }
+                if (IsIEnumerable(sourceType))
+                    return mapIEnumerableToItemMethodInfo;
+            }
+            return null;
+        }
+        private static bool IsIEnumerable(Type sourceType)
+        {
+            return sourceType.GetInterfaces().Contains(typeof(IEnumerable));
+        }
+        private static bool IsAssignableToList(Type destinationType)
+        {
+            return destinationType.IsAssignableFrom(typeof(List<>).MakeGenericType(destinationType.GenericTypeArguments[0]));
+        }
+
         private static ListInfo CreateListMapping(Type sourceType, Type destinationType)
         {
-            MethodInfo mappingMethod;
+            var mappingMethod = GetListMappingMethod(sourceType,destinationType);
+            if (mappingMethod == null) return null;
             var sourceElementType = GetElementType(sourceType);
             var destElementType = GetElementType(destinationType);
-
-            if (destinationType.IsArray && sourceType.IsArray)
-                mappingMethod = mapArrayMethodInfo;
-            else
-            {
-                mappingMethod = destinationType.IsArray
-                    ? sourceType.GetInterfaces().Contains(typeof(IList))
-                        ? mapListToArrayMethodInfo : mapItemToArrayMethodInfo
-                    : destinationType.GetInterfaces().Contains(typeof(IList))
-                        ? mapArrayToListMethodInfo : mapArrayToItemMethodInfo;
-            }
-
             return new ListInfo()
             {
                 ListMappingMethod = mappingMethod.MakeGenericMethod(sourceElementType, destElementType),
@@ -230,10 +274,9 @@ namespace Moon.FastAutoMapper
 
         private static MethodInfo CreateMethodMapping(Type sourceType, Type destinationType)
         {
-            if (destinationType.IsArray || sourceType.IsArray)
-            {
-                return listMapping.GetMapping(sourceType, destinationType).ListMappingMethod;
-            }
+            var mapping = listMapping.GetMapping(sourceType, destinationType);
+            if (mapping != null)
+                return mapping.ListMappingMethod;
             return mapObjectMethodInfo.MakeGenericMethod(sourceType, destinationType);
         }
 
@@ -328,11 +371,14 @@ namespace Moon.FastAutoMapper
             return type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
         }
 
-        private static void EmitListMapping(ILGenerator iL, Type sourceType, Type destType)
+        private static bool EmitListMapping(ILGenerator iL, Type sourceType, Type destType)
         {
+            var mapping= listMapping.GetMapping(sourceType, destType);
+            if (mapping == null) return false;
             iL.Emit(OpCodes.Ldarg_0);
             //call Map{Object|Array|List}(object source)
-            iL.Emit(OpCodes.Call, listMapping.GetMapping(sourceType, destType).ListMappingMethod);
+            iL.Emit(OpCodes.Call, mapping.ListMappingMethod);
+            return true;
         }
 
         private static long GetEnumMapping(Type sourceType, Type destType)
@@ -590,8 +636,10 @@ namespace Moon.FastAutoMapper
                 EmitObjectMapping(iL, sourceType);
             else if (destinationType == stringType)
                 EmitStringMapping(iL, sourceType);
-            else if (destinationType.IsArray || sourceType.IsArray)
-                EmitListMapping(iL, sourceType, destinationType);
+            else if (EmitListMapping(iL, sourceType, destinationType))
+            {
+
+            }
             else if (destinationType.IsEnum || sourceType.IsEnum)
             {
                 if (destinationType.IsEnum & sourceType.IsEnum)
@@ -855,7 +903,7 @@ namespace Moon.FastAutoMapper
             var destinationList = new TDestination[len];
             if (len > 0)
             {
-                var mapElementFunction = GetMapping<TSource, TDestination>(); ;
+                var mapElementFunction = GetMapping<TSource, TDestination>(); 
                 for (var i = 0; i < len; i++)
                 {
                     var sourceItem = sourceList[i];
@@ -896,6 +944,55 @@ namespace Moon.FastAutoMapper
             if (sourceList == null || sourceList.Length == 0 || sourceList[0] == null)
                 return default(TDestination);
             return GetMapping<TSource, TDestination>()(sourceList[0]);
+        }
+
+        private static TDestination[] MapICollectionToArray<TSource, TDestination>(ICollection<TSource> sourceList)
+        {
+            var len = sourceList.Count;
+            var destinationList = new TDestination[len];
+            if (len > 0)
+            {
+                var mapElementFunction = GetMapping<TSource, TDestination>();
+                int i = 0;
+                foreach(var item in sourceList)
+                {
+                    if (item != null)
+                        destinationList[i] =mapElementFunction(item);
+                    i++;
+                }
+            }
+            return destinationList;
+        }
+        private static List<TDestination> MapIEnumerableToList<TSource, TDestination>(IEnumerable<TSource> sourceList)
+        {
+            var destinationList = new List<TDestination>();
+            var mapElementFunction = GetMapping<TSource, TDestination>();
+            foreach (var item in sourceList)
+            {
+                destinationList.Add(item == null ? default(TDestination) : mapElementFunction(item));
+            }
+            return destinationList;
+        }
+
+        private static TDestination[] MapIEnumerableToArray<TSource, TDestination>(IEnumerable<TSource> sourceList)
+        {
+            var collection = sourceList as ICollection<TSource>;
+            if (collection != null)
+                return MapICollectionToArray<TSource,TDestination>(collection);
+            var destinationList = MapIEnumerableToList<TSource,TDestination>(sourceList);
+            var array = new TDestination[destinationList.Count];
+            destinationList.CopyTo(array);
+            return array;
+        }
+
+        private static TDestination MapIEnumerableToItem<TSource, TDestination>(IEnumerable<TSource> sourceList)
+        {
+            foreach (var item in sourceList)
+            {
+                if (item == null) return default(TDestination);
+                return GetMapping<TSource, TDestination>()(item);
+            }
+            return default(TDestination);
         }
 
         private static TDestination CallLambda<TSource, TDestination>(TSource source)

@@ -5,7 +5,25 @@ namespace Moon.FastAutoMapper.UnitTest
     [TestClass]
     public class CollectionMappingTest:BaseMappingTest
     {
-        
+        private static readonly List<SourcePoint> sourcePointList = new List<SourcePoint>()
+        {
+            new SourcePoint() { x = 109, y = "209", a = 31 },
+            null,
+            new SourcePoint() { x = 101, y = "212", a = 33 }
+        };
+        private static readonly List<DestinationPoint> destinationPointList = new List<DestinationPoint>()
+        {
+            new DestinationPoint() { x = 109, y = 209, a = 31 },
+            null,
+            new DestinationPoint() { x = 101, y = 212, a = 33 }
+        };
+        private static IEnumerable<SourcePoint> GetData()
+        {
+            yield return sourcePointList[0];
+            yield return sourcePointList[1];
+            yield return sourcePointList[2];
+        }
+
         [TestMethod]
         public void TestSourcePointArrayToDestinationPointMapping()
         {
@@ -41,17 +59,33 @@ namespace Moon.FastAutoMapper.UnitTest
                 new SourcePoint[0],
                 (DestinationPoint)null);
         }
-
+        [TestMethod]
+        public void TestSourcePointGenericArrayToDestinationPointGeneric()
+        {
+            TestMapping<SourcePointGeneric<int>[], DestinationPointGeneric<long>>(
+                new[] { new SourcePointGeneric<int>() { x = 109, y = 201 } },
+                new DestinationPointGeneric<long>() { x = 109, y = 201});
+        }
+        [TestMethod]
+        public void TestSourcePointGenericIEnumerableToDestinationPointGeneric()
+        {
+            TestMapping<IEnumerable<SourcePointGeneric<int>>, DestinationPointGeneric<long>>(
+                new List<SourcePointGeneric<int>>() {
+                    new SourcePointGeneric<int>() { x = 109, y = 201 }},
+                new DestinationPointGeneric<long>() { x = 109, y = 201 });
+        }
+        [TestMethod]
+        public void TestSourcePointGenericToDestinationPointGenericArray()
+        {
+            TestMapping<SourcePointGeneric<int>, DestinationPointGeneric<long>[]>(
+                new SourcePointGeneric<int>() { x = 109, y = 201 },
+                new[] { new DestinationPointGeneric<long>() { x = 109, y = 201 } });
+        }
         [TestMethod]
         public void TestSourcePointArrayToDestinationStructPointArrayMapping()
         {
             TestMapping<SourcePoint[], DestinationStructPoint[]>(
-                new []
-                {
-                    new SourcePoint() { x = 109, y = "209", a = 31 },
-                    null,
-                    new SourcePoint() { x = 101, y = "212", a = 33 }
-                },
+                sourcePointList.ToArray(),
                 new [] {
                     new DestinationStructPoint() { x = 109, y = 209, a = 31 },
                     new DestinationStructPoint(),
@@ -62,12 +96,7 @@ namespace Moon.FastAutoMapper.UnitTest
         public void TestSourcePointListToDestinationStructPointArrayMapping()
         {
             TestMapping<List<SourcePoint>, DestinationStructPoint[]>(
-                new List<SourcePoint>()
-                {
-                    new SourcePoint() { x = 109, y = "209", a = 31 },
-                    null,
-                    new SourcePoint() { x = 101, y = "212", a = 33 }
-                },
+                sourcePointList,
                 new [] {
                     new DestinationStructPoint() { x = 109, y = 209, a = 31 },
                     new DestinationStructPoint(),
@@ -78,20 +107,74 @@ namespace Moon.FastAutoMapper.UnitTest
         public void TestSourcePointListToDestinationPointListMapping()
         {
             TestMapping<List<SourcePoint>, List<DestinationPoint>>(
-                new List<SourcePoint>
-                {
-                    new SourcePoint() { x = 109, y = "209", a = 31, k=0 },
-                    null,
-                    new SourcePoint() { x = 101, y = "212", a = 33,k=0 }
-                },
-                new List<DestinationPoint>
-                {
-                    new DestinationPoint() { x = 109, y = 209, a = 31 },
-                    null,
-                    new DestinationPoint() { x = 101, y = 212, a = 33 }
-                }
-
-                );
+                sourcePointList,destinationPointList);
+        }
+        [TestMethod]
+        public void TestSourcePointListToDestinationPointIListMapping()
+        {
+            TestMapping<List<SourcePoint>, IList<DestinationPoint>>(
+                sourcePointList, destinationPointList);
+        }
+        [TestMethod]
+        public void TestSourcePointIListToDestinationPointListMapping()
+        {
+            TestMapping<IList<SourcePoint>, List<DestinationPoint>>(
+                sourcePointList, destinationPointList);
+        }
+        [TestMethod]
+        public void TestSourcePointIEnumerableToDestinationPointIEnumerableMapping()
+        {
+            TestMapping<IEnumerable<SourcePoint>, IEnumerable<DestinationPoint>>(
+                sourcePointList, destinationPointList);
+            TestMapping<IEnumerable<SourcePoint>, IEnumerable<DestinationPoint>>(
+                GetData(), destinationPointList);
+        }
+        [TestMethod]
+        public void TestSourcePointIEnumerableToDestinationPointListMapping()
+        {
+            TestMapping<IEnumerable<SourcePoint>, List<DestinationPoint>>(
+                sourcePointList, destinationPointList);
+            TestMapping<IEnumerable<SourcePoint>, List<DestinationPoint>>(
+                GetData(), destinationPointList);
+        }
+        [TestMethod]
+        public void TestSourcePointIEnumerableToDestinationPointArrayMapping()
+        {
+            TestMapping<IEnumerable<SourcePoint>, DestinationPoint[]>(
+                sourcePointList, destinationPointList.ToArray());
+            TestMapping<IEnumerable<SourcePoint>, DestinationPoint[]>(
+                GetData(), destinationPointList.ToArray());
+        }
+        [TestMethod]
+        public void TestSourcePointICollectionToDestinationPointArrayMapping()
+        {
+            TestMapping<ICollection<SourcePoint>, DestinationPoint[]>(
+                sourcePointList, destinationPointList.ToArray());
+        }
+        [TestMethod]
+        public void TestSourcePointIEnumerableToDestinationPoint()
+        {
+            TestMapping<IEnumerable<SourcePoint>, DestinationPoint>(
+                sourcePointList, destinationPointList[0]);
+        }
+        [TestMethod]
+        public void TestIEnumerableIntToInt()
+        {
+            TestMapping<IEnumerable<int>, int>(new List<int> { 2, 3 }, 2);
+        }
+        [TestMethod]
+        public void TestSourcePointEmptyIEnumerableToDestinationPoint()
+        {
+            TestMapping<IEnumerable<SourcePoint>, DestinationPoint>(
+                new List<SourcePoint>(),(DestinationPoint) null);
+            TestMapping<IEnumerable<SourcePoint>, DestinationPoint>(
+                new List<SourcePoint>() { null }, (DestinationPoint)null);
+        }
+        [TestMethod]
+        public void TestSourcePointIListToDestinationPoint()
+        {
+            TestMapping<IList<SourcePoint>, DestinationPoint>(
+                sourcePointList, destinationPointList[0]);
         }
         [TestMethod]
         public void TestStringArrayToLongArrayMapping()
@@ -105,9 +188,7 @@ namespace Moon.FastAutoMapper.UnitTest
         {
             TestMapping<int[], string[]>(new[] { 233, 33, 35, 5563355 });
             TestMapping<int[], string[]>(null);            
-        }
-
-    
+        }    
         [TestMethod]
         public void TestObjectArrayToLongArrayMapping()
         {
