@@ -1232,7 +1232,7 @@ namespace Moon.FastAutoMapper
 
         public static string ToString(float f)
         {
-            return f.ToString(Mapper.MappingCulture);
+            return f.ToString(MappingCulture);
         }
 
         public static string ToString(decimal f)

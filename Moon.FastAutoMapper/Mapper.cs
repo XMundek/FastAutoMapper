@@ -26,60 +26,40 @@ namespace Moon.FastAutoMapper
             public bool IsSimpleMapping;
         }
 
-        //dictionary used to store mapping information between source and destination type 
-        private class MappingDictionary<T> : Dictionary<long, T> where T:class
+        private class DelegateDictionary : MappingDictionary<Delegate>
         {
-            public MappingDictionary(Func<Type, Type, T> createMapping):base(256)
-            {
-                CreateMapping = createMapping;
-            }
-
-            private Func<Type, Type, T> CreateMapping;
-
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public T GetMapping(Type sourceType, Type destType)
+            protected sealed override Delegate CreateMapping(Type sourceType, Type destinationType)
             {
-                var key = Mapper.GetMappingKey(sourceType, destType);               
-                if (this.TryGetValue(key,out T value))
-                {
-                    return value;
-                }
-                var mappingInfo = CreateMapping(sourceType, destType);
-                if (mappingInfo == null) return null;
-                lock (this)
-                {
-                    this[key] = mappingInfo;
-                    return mappingInfo;
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetMapping(long key, T value)
-            {
-                lock (this)
-                {
-                    this[key] = value;
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void DeleteMapping(long key)
-            {
-                lock (this)
-                {
-                    if (this.ContainsKey(key))
-                        this.Remove(key);
-                }
+                return Mapper.CreateObjectMapping(sourceType, destinationType);
             }
         }
 
+        private class ListInfoDictionary : MappingDictionary<ListInfo>
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            protected sealed override ListInfo CreateMapping(Type sourceType, Type destinationType)
+            {
+                return Mapper.CreateListMapping(sourceType, destinationType);
+            }
+        }
+
+        private class MethodInfoDictionary : MappingDictionary<MethodInfo>
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            protected sealed override MethodInfo CreateMapping(Type sourceType, Type destinationType)
+            {
+                return Mapper.CreateMethodMapping(sourceType, destinationType);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static TDestination Map<TDestination>(object source)
         {
             if (source == null)
                 return default(TDestination);
             return (TDestination)typeMapping.GetMapping(source.GetType(), typeof(TDestination)).DynamicInvoke(source);
         }
-
 
         public static TDestination Map<TSource, TDestination>(TSource source)
         {
@@ -110,16 +90,17 @@ namespace Moon.FastAutoMapper
             listMethod.DeleteMapping(key);
         }
 
-        public static CultureInfo MappingCulture
+       public static CultureInfo MappingCulture
         {
             get { return MappingPrimitivesConverter.MappingCulture; }
             set { MappingPrimitivesConverter.MappingCulture = value; }
         }
 
-        private static readonly MappingDictionary<Delegate> typeMapping = new MappingDictionary<Delegate>(CreateObjectMapping);    
+        private static readonly DelegateDictionary typeMapping = new DelegateDictionary();
+        private static readonly ListInfoDictionary listMapping = new ListInfoDictionary();
+        private static readonly MethodInfoDictionary listMethod = new MethodInfoDictionary();
         private static readonly Dictionary<long, Dictionary<int, int>> enumMapping = new Dictionary<long, Dictionary<int, int>>(128);
-        private static readonly MappingDictionary<ListInfo> listMapping =new MappingDictionary<ListInfo>(CreateListMapping);
-        private static readonly MappingDictionary<MethodInfo> listMethod = new MappingDictionary<MethodInfo>(CreateMethodMapping);
+        private static readonly Dictionary<long, MethodInfo> primitiveTypeMappings = new Dictionary<long, MethodInfo>();
 
         private static readonly Type objectType = typeof(object);
         private static readonly Type funcType = typeof(Func<,>);
@@ -145,7 +126,6 @@ namespace Moon.FastAutoMapper
         private static readonly MethodInfo mapStringToEnumMethodInfo = GetMappingMethod(nameof(MapStringToEnum));
         private static readonly MethodInfo mapCallLambdaMethodInfo = GetMappingMethod(nameof(CallLambda));
         private static readonly Module dynamicModule = GetDynamicModule();
-        private static readonly Dictionary<long, MethodInfo> primitiveTypeMappings = new Dictionary<long, MethodInfo>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static MethodInfo GetMappingMethod(string name)
@@ -180,7 +160,7 @@ namespace Moon.FastAutoMapper
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static long GetMappingKey(Type sourceType, Type destinationType)
+        internal static long GetMappingKey(Type sourceType, Type destinationType)
         {
             return (((long)sourceType.GetHashCode()) << 32) + destinationType.GetHashCode();
         }
@@ -272,6 +252,7 @@ namespace Moon.FastAutoMapper
             return destinationType.IsAssignableFrom(listType.MakeGenericType(destinationType.GenericTypeArguments[0]));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ListInfo CreateListMapping(Type sourceType, Type destinationType)
         {
             var mappingMethod = GetListMappingMethod(sourceType,destinationType);
@@ -286,6 +267,7 @@ namespace Moon.FastAutoMapper
             };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static MethodInfo CreateMethodMapping(Type sourceType, Type destinationType)
         {
             var mapping = listMapping.GetMapping(sourceType, destinationType);
@@ -350,20 +332,13 @@ namespace Moon.FastAutoMapper
                             SourceField = sourceField,
                             DestinationField = destinationField
                         };
-
-                        if (sourceFieldType.IsEnum || destinationFieldType.IsEnum)
+                        if (sourceFieldType.IsEnum)
                         {
-                            if (!(sourceFieldType.IsEnum && destinationFieldType.IsEnum))
-                            {
-                                if (sourceFieldType.IsEnum)
-                                {
-                                    if (!(destinationFieldType == stringType || destinationFieldType == objectType || IsNullable(destinationFieldType)))
-                                        sourceFieldType = GetEnumType(sourceFieldType);
-                                }
-                                else if (!(sourceFieldType == stringType || IsNullable(sourceFieldType)))
-                                        destinationFieldType = GetEnumType(destinationFieldType);
-                            }
+                            if (!(destinationFieldType.IsEnum || destinationFieldType == stringType || destinationFieldType == objectType || IsNullable(destinationFieldType)))
+                                sourceFieldType = GetEnumType(sourceFieldType);
                         }
+                        else if (destinationFieldType.IsEnum && !(sourceFieldType == stringType || IsNullable(sourceFieldType)))
+                                destinationFieldType = GetEnumType(destinationFieldType);
 
                         if (sourceFieldType == destinationFieldType)
                             fieldMapping.IsSimpleMapping = true;
@@ -896,6 +871,7 @@ namespace Moon.FastAutoMapper
             return mapping.ContainsKey(source) ? mapping[source] : 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int? MapNullableEnum(int source, long mappingKey)
         {
             var mapping = enumMapping[mappingKey];
