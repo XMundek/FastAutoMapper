@@ -125,21 +125,13 @@ namespace Moon.FastAutoMapper
         private static readonly MethodInfo mapIEnumerableToItemMethodInfo = GetMappingMethod(nameof(MapIEnumerableToItem));
         private static readonly MethodInfo mapStringToEnumMethodInfo = GetMappingMethod(nameof(MapStringToEnum));
         private static readonly MethodInfo mapCallLambdaMethodInfo = GetMappingMethod(nameof(CallLambda));
-        private static readonly Module dynamicModule = GetDynamicModule();
+        private static readonly Module dynamicModule = typeof(Mapper).Module;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static MethodInfo GetMappingMethod(string name)
         {
             return typeof(Mapper).GetMethod(name,
                 BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Module GetDynamicModule()
-        {
-            return AssemblyBuilder.DefineDynamicAssembly(
-                new AssemblyName("_"), AssemblyBuilderAccess.Run).DefineDynamicModule("_");
-          
         }
 
         static Mapper()
@@ -180,7 +172,7 @@ namespace Moon.FastAutoMapper
                 var value = enumValues[i];
                 try
                 {
-                    enumMappings.Add((int)value, (int)Enum.Parse(destinationType, value.ToString()));
+                    enumMappings.Add((int)value, (int)Enum.Parse(destinationType, value.ToString(), true));
                 }
                 catch
                 {
