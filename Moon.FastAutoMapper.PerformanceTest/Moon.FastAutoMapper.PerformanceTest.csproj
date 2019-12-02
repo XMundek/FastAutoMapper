@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net45;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
     <AssemblyTitle>Moon.FastAutoMapper.PerformanceTest</AssemblyTitle>
     <Company>MoonSoft Company Ltd.</Company>
     <Product>Moon.FastAutoMapper.PerformanceTest</Product>
@@ -11,7 +11,7 @@
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Automapper" Version="7.0.1" />
+    <PackageReference Include="Automapper" Version="8.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Moon.FastAutoMapper\Moon.FastAutoMapper.csproj" />

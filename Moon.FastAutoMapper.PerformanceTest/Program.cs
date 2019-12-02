@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using AutoMapper;
 using AutoMapper.Configuration;
 
 namespace Moon.FastAutoMapper.PerformanceTest
@@ -59,11 +60,18 @@ namespace Moon.FastAutoMapper.PerformanceTest
             Console.WriteLine("PrepareTestData...");
             var testData = GetTestData();
 
-            RunTest("Automapper 7.0.1",testData,
+            RunTest("Automapper 8.1.1", testData,
                 data =>
                 {
-                    AutoMapper.Mapper.Initialize(new MapperConfigurationExpression());
-                    var result = AutoMapper.Mapper.Map<PersonIn[], PersonOut[]>(data);
+                    var configuration = new MapperConfiguration(cfg =>
+                    {
+                        cfg.CreateMap<AddressIn, AddressOut>();
+                        cfg.CreateMap<PersonIn, PersonOut>();
+                    });
+#if DEBUG
+                    configuration.AssertConfigurationIsValid();
+#endif
+                    var result = configuration.CreateMapper().Map<PersonIn[], PersonOut[]>(data);
                 });
 
             RunTest("Moon.FastAutoMapper", testData,

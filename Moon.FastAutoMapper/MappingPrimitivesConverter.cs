@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Globalization;
+using System.Reflection;
 
 namespace Moon.FastAutoMapper
 {
@@ -838,7 +839,7 @@ namespace Moon.FastAutoMapper
 
         public static bool ToBoolean(object v)
         {
-            return (v!=null) && (!v.GetType().IsValueType || Mapper.Map<bool>(v));                        
+            return (v!=null) && (!v.GetType().GetTypeInfo().IsValueType || Mapper.Map<bool>(v));
         }
 
         public static bool ToBoolean(string v)
