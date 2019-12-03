@@ -55,6 +55,10 @@ namespace Moon.FastAutoMapper.PerformanceTest
             }
         }
 
+        [Conditional("DEBUG")]
+        static void CheckAutomapperConfiguration(MapperConfiguration configuration)
+            => configuration.AssertConfigurationIsValid();
+
         static void Main()
         {
             Console.WriteLine("PrepareTestData...");
@@ -68,9 +72,7 @@ namespace Moon.FastAutoMapper.PerformanceTest
                         cfg.CreateMap<AddressIn, AddressOut>();
                         cfg.CreateMap<PersonIn, PersonOut>();
                     });
-#if DEBUG
-                    configuration.AssertConfigurationIsValid();
-#endif
+                    CheckAutomapperConfiguration(configuration);
                     var result = configuration.CreateMapper().Map<PersonIn[], PersonOut[]>(data);
                 });
 

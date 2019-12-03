@@ -21,5 +21,4 @@ namespace Moon.FastAutoMapper
             return Mapper.Map<TDestination>(obj);
         }
     }
-
 }
