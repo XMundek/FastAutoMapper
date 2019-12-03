@@ -16,17 +16,26 @@ namespace Moon.FastAutoMapper
         public T GetMapping(Type sourceType, Type destType)
         {
             var key = Mapper.GetMappingKey(sourceType, destType);
-            if (this.TryGetValue(key, out T value))
+            try 
             {
-                return value;
+                if (TryGetValue(key, out T value)) 
+                    return value;
+            }
+            catch
+            {
+                //exception can appear if read and write is executed on the same time
+                //it will be very rare case, so I decided to not lock dictionary for each reading
+                //but catch such exception and try to read again.
+                lock (this)
+                {
+                    if (TryGetValue(key, out T value)) 
+                        return value;
+                }
             }
             var mappingInfo = CreateMapping(sourceType, destType);
             if (mappingInfo == null) return null;
-            lock (this)
-            {
-                this[key] = mappingInfo;
-                return mappingInfo;
-            }
+            SetMapping(key, mappingInfo);
+            return mappingInfo;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
