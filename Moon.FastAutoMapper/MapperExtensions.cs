@@ -9,16 +9,11 @@ using System.Threading.Tasks;
 namespace Moon.FastAutoMapper
 {
     public static class MapperExtensions
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TDestination Map<TSource, TDestination>(this TSource obj)
-        {
-            return Mapper.Map<TSource, TDestination>(obj);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TDestination Map<TDestination>(this object obj)
-        {
-            return Mapper.Map<TDestination>(obj);
-        }
+    {     
+        public static TDestination Map<TSource, TDestination>(this TSource obj)=>
+            Mapper.Map<TSource, TDestination>(obj);
+
+        public static TDestination Map<TDestination>(this object obj)=>
+            Mapper.Map<TDestination>(obj);
     }
 }
